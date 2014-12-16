@@ -10,20 +10,23 @@ var mocks = require('./mocks');
 var simple = require('..');
 var sand = require('sand')({appPath: '..'})
   .use(require('sand-mysql'))
-  .use(simple, {modelsPath: __dirname + '/goodModels'})
-  .start();
+  .use(simple, {modelsPath: __dirname + '/goodModels'});
 
 
-describe('mysqlSimple', function() {
+before(function(done) {
+  sand.start(done);
+});
 
-  it('should be loaded into sand', function() {
+describe('mysqlSimple', function () {
+
+  it('should be loaded into sand', function () {
 
     sand.mysqlSimple.should.be.ok;
 
   });
 
 
-  it('should have loaded all models', function() {
+  it('should have loaded all models', function () {
 
     sand.mysqlSimple.models.should.be.ok;
     sand.mysqlSimple.models.User.should.be.a.Function;
@@ -35,9 +38,9 @@ describe('mysqlSimple', function() {
 });
 
 
-describe('mysqlSimple.Model.getWhereClause()', function() {
+describe('mysqlSimple.Model.getWhereClause()', function () {
 
-  it('should build WHERE with string column and scalar value', function() {
+  it('should build WHERE with string column and scalar value', function () {
 
     var where = sand.mysqlSimple.models.User.global().getWhereClause('user_id', 1);
 
@@ -46,7 +49,7 @@ describe('mysqlSimple.Model.getWhereClause()', function() {
 
   });
 
-  it('should build WHERE with object of property constraints', function() {
+  it('should build WHERE with object of property constraints', function () {
 
     var where = sand.mysqlSimple.models.User.global().getWhereClause({user_id: 1, level: 2, email: 'test@test.com'});
 
@@ -54,16 +57,16 @@ describe('mysqlSimple.Model.getWhereClause()', function() {
     where.clause.should.match(/`level`\s*=\s*\?/);
     where.clause.should.match(/`email`\s*=\s*\?/);
     where.clause.should.match(/`user_id`\s*=\s*\?\s+AND\s+`level`\s*=\s*\?\s+AND\s+`email`\s*=\s*\?/);
-    where.values.should.eql([1,2,'test@test.com']);
+    where.values.should.eql([1, 2, 'test@test.com']);
 
   });
 
 });
 
 
-describe('mysqlSimple.Model.questions()', function() {
+describe('mysqlSimple.Model.questions()', function () {
 
-  it('should build a proper question mark placeholder string', function() {
+  it('should build a proper question mark placeholder string', function () {
 
     sand.mysqlSimple.Model.global().questions(3).should.match(/\?,\s*\?,\s*\?/)
 
@@ -72,9 +75,9 @@ describe('mysqlSimple.Model.questions()', function() {
 });
 
 
-describe('mysqlSimple.Model#getSelectRow()', function() {
+describe('mysqlSimple.Model#getSelectRow()', function () {
 
-  it('should build a SELECT statement from column and scalar value', function() {
+  it('should build a SELECT statement from column and scalar value', function () {
 
     var select = sand.mysqlSimple.models.User.global().getSelectRow('user_id', 1);
 
@@ -83,7 +86,7 @@ describe('mysqlSimple.Model#getSelectRow()', function() {
 
   });
 
-  it('should build a SELECT statement from an object of constraints', function() {
+  it('should build a SELECT statement from an object of constraints', function () {
 
     var select = sand.mysqlSimple.models.User.global().getSelectRow({user_id: 1, level: 2, email: 'test@test.com'});
 
@@ -91,24 +94,24 @@ describe('mysqlSimple.Model#getSelectRow()', function() {
     select.query.should.match(/`level`\s*=\s*\?/);
     select.query.should.match(/`email`\s*=\s*\?/);
     select.query.should.match(/SELECT\s+\*\s+FROM\s+`user`\s+WHERE\s+`user_id`\s*=\s*\?\s+AND\s+`level`\s*=\s*\?\s+AND\s+`email`\s*=\s*\?/);
-    select.values.should.eql([1,2,'test@test.com']);
+    select.values.should.eql([1, 2, 'test@test.com']);
 
   });
 
 });
 
 
-describe('mysqlSimple.Model#selectRow()', function() {
+describe('mysqlSimple.Model#selectRow()', function () {
 
   var mock;
-  afterEach(function() {
+  afterEach(function () {
     if (mock) {
       mock.restore();
       mock = null;
     }
   });
 
-  it ('should select a row from the database using a column and scalar', function() {
+  it('should select a row from the database using a column and scalar', function () {
 
     var value = 'test@test.com';
 
@@ -118,9 +121,13 @@ describe('mysqlSimple.Model#selectRow()', function() {
     };
 
     mock = sinon.mock(sand.mysql);
-    mock.expects('query').withArgs(select.query, select.values).yields(null, [{user_id: 1, level: 2, email: 'test@test.com'}]);
+    mock.expects('query').withArgs(select.query, select.values).yields(null, [{
+      user_id: 1,
+      level: 2,
+      email: 'test@test.com'
+    }]);
 
-    sand.mysqlSimple.models.User.global().selectRow('email', value, function(err, row) {
+    sand.mysqlSimple.models.User.global().selectRow('email', value, function (err, row) {
 
       row.should.eql({user_id: 1, level: 2, email: value});
       mock.verify();
@@ -128,7 +135,7 @@ describe('mysqlSimple.Model#selectRow()', function() {
 
   });
 
-  it ('should select a row from the database using an object of constraints', function() {
+  it('should select a row from the database using an object of constraints', function () {
 
     var userConstraints = {
       user_id: 1,
@@ -138,13 +145,17 @@ describe('mysqlSimple.Model#selectRow()', function() {
 
     var select = {
       query: 'SELECT * FROM `user` WHERE `user_id` = ? AND `level` = ? AND `email` = ? LIMIT 1',
-      values: [1,2,'test@test.com']
+      values: [1, 2, 'test@test.com']
     };
 
     mock = sinon.mock(sand.mysql);
-    mock.expects('query').withArgs(select.query, select.values).yields(null, [{user_id: 1, level: 2, email: 'test@test.com'}]);
+    mock.expects('query').withArgs(select.query, select.values).yields(null, [{
+      user_id: 1,
+      level: 2,
+      email: 'test@test.com'
+    }]);
 
-    sand.mysqlSimple.models.User.global().selectRow(userConstraints, function(err, row) {
+    sand.mysqlSimple.models.User.global().selectRow(userConstraints, function (err, row) {
 
       row.should.eql(userConstraints);
       mock.verify();
@@ -155,15 +166,15 @@ describe('mysqlSimple.Model#selectRow()', function() {
 });
 
 
-describe('mysqlSimple.Model#values()', function() {
+describe('mysqlSimple.Model#values()', function () {
 
-  it('should return a map of column names to (string|int) values', function() {
+  it('should return a map of column names to (string|int) values', function () {
 
     var userModel = generateUserModel();
 
     var values = userModel.values();
 
-    _.each(values, function(val, column) {
+    _.each(values, function (val, column) {
       (_.isString(val) || _.isNumber(val)).should.be.ok;
       _.isString(column).should.be.ok;
     });
@@ -172,10 +183,10 @@ describe('mysqlSimple.Model#values()', function() {
 });
 
 
-describe('mysqlSimple.Model#getInsert()', function() {
+describe('mysqlSimple.Model#getInsert()', function () {
 
 
-  it('should construct a properly formatted INSERT statement', function() {
+  it('should construct a properly formatted INSERT statement', function () {
 
     var userModel = generateUserModel();
 
@@ -183,7 +194,7 @@ describe('mysqlSimple.Model#getInsert()', function() {
 
     var expected = {
       query: /INSERT\s+INTO\s+`user`\s+\(`user_id`,\s*`level`,\s*`email`\)\s*VALUES\s*\(\?,\s*\?,\s*\?\)/,
-      values: [1,2,'test@test.com']
+      values: [1, 2, 'test@test.com']
     };
 
     insert.query.should.match(expected.query);
@@ -194,10 +205,10 @@ describe('mysqlSimple.Model#getInsert()', function() {
 });
 
 
-describe('mysqlSimple.Model#getUpdate()', function() {
+describe('mysqlSimple.Model#getUpdate()', function () {
 
 
-  it('should construct a properly formatted UPDATE statement', function() {
+  it('should construct a properly formatted UPDATE statement', function () {
 
     var userModel = generateUserModel();
 
@@ -205,7 +216,7 @@ describe('mysqlSimple.Model#getUpdate()', function() {
 
     var expected = {
       query: /UPDATE\s+`user`\s+SET\s+`user_id`\s*=\s*\?,\s*`level`\s*=\s*\?,\s*`email`\s*=\s*\?\s+WHERE\s+`email`\s*=\s*\?\s+LIMIT\s+1/,
-      values: [1,2,'test@test.com', 'test@test.com']
+      values: [1, 2, 'test@test.com', 'test@test.com']
     };
 
     update.query.should.match(expected.query);
