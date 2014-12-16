@@ -1,6 +1,6 @@
 {
   "name": "sand-mysql-simple",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "description": "A minimalist MySQL Model extension",
   "main": "lib/index.js",
   "scripts": {
