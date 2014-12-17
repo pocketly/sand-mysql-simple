@@ -68,7 +68,7 @@ describe('mysqlSimple.Model.questions()', function () {
 
   it('should build a proper question mark placeholder string', function () {
 
-    require('sand-mysql-simple').Model.global().questions(3).should.match(/\?,\s*\?,\s*\?/)
+    require('..').Model.global().questions(3).should.match(/\?,\s*\?,\s*\?/)
 
   });
 
