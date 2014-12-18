@@ -185,7 +185,6 @@ describe('mysqlSimple.Model#values()', function () {
 
 describe('mysqlSimple.Model#getInsert()', function () {
 
-
   it('should construct a properly formatted INSERT statement', function () {
 
     var userModel = generateUserModel();
@@ -207,7 +206,6 @@ describe('mysqlSimple.Model#getInsert()', function () {
 
 describe('mysqlSimple.Model#getUpdate()', function () {
 
-
   it('should construct a properly formatted UPDATE statement', function () {
 
     var userModel = generateUserModel();
@@ -221,6 +219,132 @@ describe('mysqlSimple.Model#getUpdate()', function () {
 
     update.query.should.match(expected.query);
     update.values.should.eql(expected.values);
+
+  });
+
+});
+
+
+describe('mysqlSimple.Where#append()', function () {
+
+  it('should add a column to the where clause', function () {
+
+    var condition = '`user_id` = ?';
+    var value = 1;
+    var w = new simple.Where('AND');
+
+    w.joinBy.should.be.equal('AND');
+
+    w.append(condition, value);
+    w.conditions.length.should.equal(1);
+    w.conditions[0].should.eql(condition);
+    w.values.length.should.equal(1);
+    w.values[0].should.equal(value);
+
+
+    condition = 'user_id BETWEEN (? AND ?)';
+    value = [1, 2];
+    w = new simple.Where('OR');
+    w.append(condition, value);
+    w.conditions.should.eql([condition]);
+    w.values.should.eql(value);
+
+  });
+
+  it('should build a valid where clause', function() {
+
+    var resultQuery = '`user_id` = ? AND `email` = ?';
+    var resultValues = [1, 'test@test.com'];
+
+    var w = new simple.Where('AND');
+
+    w.append('`user_id` = ?', 1);
+    w.append('`email` = ?', 'test@test.com');
+
+
+    w.build().should.eql(resultQuery);
+    w.values.should.eql(resultValues);
+
+  });
+
+  it('should build a valid nested where clause', function() {
+
+    var resultQuery = '`user_id` = ? AND (`email` = ? OR `level` = ?)';
+    var resultValues = [1, 'test@test.com', 2];
+
+    var and = new simple.Where('AND');
+    var or = new simple.Where('OR');
+
+    or.append('`email` = ?', 'test@test.com');
+    or.append('`level` = ?', 2);
+    and.append('`user_id` = ?', 1);
+    and.append(or);
+
+    and.build().should.be.eql(resultQuery);
+    and.values.should.be.eql(resultValues);
+
+  });
+
+});
+
+
+describe('mysqlSimple.Insert#build()', function () {
+
+  it('should fail to initialize without a table', function () {
+
+    (function() {
+      new simple.Insert()
+    }).should.throw();
+
+  });
+
+
+  it('should build a valid simple INSERT', function () {
+
+    var resultQuery = 'INSERT INTO `user` ( `user_id`, `email`, `level` ) VALUES ( ?, ?, ? )';
+    var resultValues = [1, 'test@test.com', 2];
+
+    var insert = new simple.Insert('`user`');
+    insert.add('`user_id`', 1); // removes ticks automatically
+    insert.addAll({email: 'test@test.com', level: 2});
+
+    insert = insert.build();
+    insert.query.should.eql(resultQuery);
+    insert.values.should.eql(resultValues);
+
+  });
+
+
+  it('should build a valid INSERT ON DUPLICATE KEY UPDATE', function () {
+
+    var resultQuery = 'INSERT INTO `user` ( `user_id`, `email`, `level` ) VALUES ( ?, ?, ? ) ON DUPLICATE KEY UPDATE `user_id` = VALUES(user_id), `email` = VALUES(email), `level` = VALUES(level)';
+    var resultValues = [1, 'test@test.com', 2];
+
+    var insert = new simple.Insert('user');
+    insert.add('user_id', 1);
+    insert.addAll({email: 'test@test.com', level: 2});
+
+    insert = insert.buildOnDuplicateUpdate();
+
+    insert.query.should.eql(resultQuery);
+    insert.values.should.eql(resultValues);
+
+  });
+
+
+  it('should build a valid INSERT ON DUPLICATE KEY UPDATE with custom UPDATE', function () {
+
+    var resultQuery = 'INSERT INTO `user` ( `user_id`, `email`, `level` ) VALUES ( ?, ?, ? ) ON DUPLICATE KEY UPDATE `user_id` = `user_id`';
+    var resultValues = [1, 'test@test.com', 2];
+
+    var insert = new simple.Insert('user');
+    insert.add('user_id', 1);
+    insert.addAll({email: 'test@test.com', level: 2});
+
+    insert = insert.buildOnDuplicateUpdate('`user_id` = `user_id`');
+
+    insert.query.should.eql(resultQuery);
+    insert.values.should.eql(resultValues);
 
   });
 
