@@ -8,9 +8,9 @@ var _ = require('lodash');
 var mocks = require('./mocks');
 
 var simple = require('..');
-var sand = require('sand')({appPath: '..'})
+var sand = require('sand')({appPath: __dirname+'/..'})
   .use(require('sand-mysql'))
-  .use(simple, {modelsPath: __dirname + '/goodModels'});
+  .use(simple, {test: {modelsPath: __dirname + '/goodModels'}});
 
 
 before(function(done) {
