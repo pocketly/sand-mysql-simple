@@ -27,7 +27,7 @@
     "require-all": "^1.0.0",
     "sand": "0.1.1",
     "sand-grain": "0.1.1",
-    "sand-mysql": "0.2.6"
+    "sand-mysql": "0.2.9"
   },
   "devDependencies": {
     "mocha": "^2.0.1",
