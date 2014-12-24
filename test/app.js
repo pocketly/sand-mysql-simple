@@ -17,215 +17,31 @@ before(function(done) {
   sand.start(done);
 });
 
-describe('mysqlSimple', function () {
+describe('mysqlSimple.Where(values, joinBy)', function () {
 
-  it('should be loaded into sand', function () {
+  _.each([ 'AND', 'OR' ], function(op) {
 
-    sand.mysqlSimple.should.be.ok;
+    it('should initialize from an object of column names mapped to values and joined by ' + op, function () {
 
-  });
+      var expectedClause = '`user_id` = ? ' + op + ' `level` = ?';
+      var expectedValues = [1,2];
 
+      var where = simple.Where({
+        user_id: 1,
+        level: 2
+      }, op);
+      var clause = where.build();
 
-  it('should have loaded all models', function () {
+      expectedClause.should.eql(clause);
+      expectedValues.should.eql(where._values);
 
-    sand.mysqlSimple.models.should.be.ok;
-    sand.mysqlSimple.models.User.should.be.a.Function;
-    sand.mysqlSimple.models.Store.should.be.a.Function;
-    sand.mysqlSimple.models.sub.Sub.should.be.a.Function;
-
-  });
-
-});
-
-
-describe('mysqlSimple.Model.getWhereClause()', function () {
-
-  it('should build WHERE with string column and scalar value', function () {
-
-    var where = sand.mysqlSimple.models.User.global().getWhereClause('user_id', 1);
-
-    where.clause.should.match(/`user_id`\s*=\s*\?/);
-    where.values.should.eql([1]);
-
-  });
-
-  it('should build WHERE with object of property constraints', function () {
-
-    var where = sand.mysqlSimple.models.User.global().getWhereClause({user_id: 1, level: 2, email: 'test@test.com'});
-
-    where.clause.should.match(/`user_id`\s*=\s*\?/);
-    where.clause.should.match(/`level`\s*=\s*\?/);
-    where.clause.should.match(/`email`\s*=\s*\?/);
-    where.clause.should.match(/`user_id`\s*=\s*\?\s+AND\s+`level`\s*=\s*\?\s+AND\s+`email`\s*=\s*\?/);
-    where.values.should.eql([1, 2, 'test@test.com']);
-
-  });
-
-});
-
-
-describe('mysqlSimple.Model.questions()', function () {
-
-  it('should build a proper question mark placeholder string', function () {
-
-    require('..').Model.global().questions(3).should.match(/\?,\s*\?,\s*\?/)
-
-  });
-
-});
-
-
-describe('mysqlSimple.Model#getSelectRow()', function () {
-
-  it('should build a SELECT statement from column and scalar value', function () {
-
-    var select = sand.mysqlSimple.models.User.global().getSelectRow('user_id', 1);
-
-    select.query.should.match(/SELECT\s+\*\s+FROM\s+`user`\s+WHERE\s+`user_id`\s*=\s*\?\s+LIMIT\s+1/);
-    select.values.should.eql([1])
-
-  });
-
-  it('should build a SELECT statement from an object of constraints', function () {
-
-    var select = sand.mysqlSimple.models.User.global().getSelectRow({user_id: 1, level: 2, email: 'test@test.com'});
-
-    select.query.should.match(/`user_id`\s*=\s*\?/);
-    select.query.should.match(/`level`\s*=\s*\?/);
-    select.query.should.match(/`email`\s*=\s*\?/);
-    select.query.should.match(/SELECT\s+\*\s+FROM\s+`user`\s+WHERE\s+`user_id`\s*=\s*\?\s+AND\s+`level`\s*=\s*\?\s+AND\s+`email`\s*=\s*\?/);
-    select.values.should.eql([1, 2, 'test@test.com']);
-
-  });
-
-});
-
-
-describe('mysqlSimple.Model#selectRow()', function () {
-
-  var mock;
-  afterEach(function () {
-    if (mock) {
-      mock.restore();
-      mock = null;
-    }
-  });
-
-  it('should select a row from the database using a column and scalar', function () {
-
-    var value = 'test@test.com';
-
-    var select = {
-      query: 'SELECT * FROM `user` WHERE `email` = ? LIMIT 1',
-      values: [value]
-    };
-
-    mock = sinon.mock(sand.mysql);
-    mock.expects('query').withArgs(select.query, select.values).yields(null, [{
-      user_id: 1,
-      level: 2,
-      email: 'test@test.com'
-    }]);
-
-    sand.mysqlSimple.models.User.global().selectRow('email', value, function (err, row) {
-
-      row.should.eql({user_id: 1, level: 2, email: value});
-      mock.verify();
-    });
-
-  });
-
-  it('should select a row from the database using an object of constraints', function () {
-
-    var userConstraints = {
-      user_id: 1,
-      level: 2,
-      email: 'test@test.com'
-    };
-
-    var select = {
-      query: 'SELECT * FROM `user` WHERE `user_id` = ? AND `level` = ? AND `email` = ? LIMIT 1',
-      values: [1, 2, 'test@test.com']
-    };
-
-    mock = sinon.mock(sand.mysql);
-    mock.expects('query').withArgs(select.query, select.values).yields(null, [{
-      user_id: 1,
-      level: 2,
-      email: 'test@test.com'
-    }]);
-
-    sand.mysqlSimple.models.User.global().selectRow(userConstraints, function (err, row) {
-
-      row.should.eql(userConstraints);
-      mock.verify();
-    });
-
-  });
-
-});
-
-
-describe('mysqlSimple.Model#values()', function () {
-
-  it('should return a map of column names to (string|int) values', function () {
-
-    var userModel = generateUserModel();
-
-    var values = userModel.values();
-
-    _.each(values, function (val, column) {
-      (_.isString(val) || _.isNumber(val)).should.be.ok;
-      _.isString(column).should.be.ok;
     });
   });
 
 });
 
 
-describe('mysqlSimple.Model#getInsert()', function () {
-
-  it('should construct a properly formatted INSERT statement', function () {
-
-    var userModel = generateUserModel();
-
-    var insert = userModel.getInsert();
-
-    var expected = {
-      query: /INSERT\s+INTO\s+`user`\s+\(`user_id`,\s*`level`,\s*`email`\)\s*VALUES\s*\(\?,\s*\?,\s*\?\)/,
-      values: [1, 2, 'test@test.com']
-    };
-
-    insert.query.should.match(expected.query);
-    insert.values.should.eql(expected.values);
-
-  });
-
-});
-
-
-describe('mysqlSimple.Model#getUpdate()', function () {
-
-  it('should construct a properly formatted UPDATE statement', function () {
-
-    var userModel = generateUserModel();
-
-    var update = userModel.getUpdate({email: 'test@test.com'}, 1);
-
-    var expected = {
-      query: /UPDATE\s+`user`\s+SET\s+`user_id`\s*=\s*\?,\s*`level`\s*=\s*\?,\s*`email`\s*=\s*\?\s+WHERE\s+`email`\s*=\s*\?\s+LIMIT\s+1/,
-      values: [1, 2, 'test@test.com', 'test@test.com']
-    };
-
-    update.query.should.match(expected.query);
-    update.values.should.eql(expected.values);
-
-  });
-
-});
-
-
-describe('mysqlSimple.Where#append()', function () {
+describe('mysqlSimple.Where#rawCondition()', function () {
 
   it('should add a column to the where clause', function () {
 
@@ -235,19 +51,19 @@ describe('mysqlSimple.Where#append()', function () {
 
     w.joinBy.should.be.equal('AND');
 
-    w.append(condition, value);
-    w.conditions.length.should.equal(1);
-    w.conditions[0].should.eql(condition);
-    w.values.length.should.equal(1);
-    w.values[0].should.equal(value);
+    w.rawCondition(condition, value);
+    w._conditions.length.should.equal(1);
+    w._conditions[0].should.eql(condition);
+    w._values.length.should.equal(1);
+    w._values[0].should.equal(value);
 
 
     condition = 'user_id BETWEEN (? AND ?)';
     value = [1, 2];
     w = new simple.Where('OR');
-    w.append(condition, value);
-    w.conditions.should.eql([condition]);
-    w.values.should.eql(value);
+    w.rawCondition(condition, value);
+    w._conditions.should.eql([condition]);
+    w._values.should.eql(value);
 
   });
 
@@ -258,12 +74,12 @@ describe('mysqlSimple.Where#append()', function () {
 
     var w = new simple.Where('AND');
 
-    w.append('`user_id` = ?', 1);
-    w.append('`email` = ?', 'test@test.com');
+    w.rawCondition('`user_id` = ?', 1);
+    w.rawCondition('`email` = ?', 'test@test.com');
 
 
     w.build().should.eql(resultQuery);
-    w.values.should.eql(resultValues);
+    w._values.should.eql(resultValues);
 
   });
 
@@ -275,13 +91,13 @@ describe('mysqlSimple.Where#append()', function () {
     var and = new simple.Where('AND');
     var or = new simple.Where('OR');
 
-    or.append('`email` = ?', 'test@test.com');
-    or.append('`level` = ?', 2);
-    and.append('`user_id` = ?', 1);
-    and.append(or);
+    or.rawCondition('`email` = ?', 'test@test.com');
+    or.rawCondition('`level` = ?', 2);
+    and.rawCondition('`user_id` = ?', 1);
+    and.condition(or);
 
     and.build().should.be.eql(resultQuery);
-    and.values.should.be.eql(resultValues);
+    and._values.should.be.eql(resultValues);
 
   });
 
@@ -345,6 +161,152 @@ describe('mysqlSimple.Insert#build()', function () {
 
     insert.query.should.eql(resultQuery);
     insert.values.should.eql(resultValues);
+
+  });
+
+});
+
+
+
+describe('mysqlSimple.Update#build()', function () {
+
+  it('should build a valid UPDATE statement', function() {
+
+    var resultQuery = 'UPDATE `user` SET `user_id` = ?, `email` = ?, `level` = ? WHERE `user_id` = ? AND `email` = ? LIMIT ?';
+    var resultValues = [1, 'test@test.com', 2, 1, 'test@test.com', 1];
+
+    var update = simple.Update('user')
+      .values({user_id: 1, email: 'test@test.com', level: 2})
+      .where(simple.Where({user_id: 1, email: 'test@test.com'}))
+      .limit(1)
+      .build();
+
+
+    update.query.should.eql(resultQuery);
+    update.values.should.eql(resultValues);
+
+  });
+
+});
+
+
+describe('mysqlSimple.Select#build()', function () {
+
+  var table = 'user';
+
+  var queries = [
+    {
+      columns: '*',
+      where: simple.Where({user_id: 1, level: 2}),
+      order: 'user_id',
+      group: 'level',
+      limit: 1,
+      offset: 2,
+      expected: 'SELECT * FROM `' + table + '` WHERE `user_id` = ? AND `level` = ? GROUP BY `level` ORDER BY `user_id` ASC LIMIT ?, ?',
+      values: [1,2,2,1]
+    },
+    {
+      columns: ['user_id', 'email', ['sum(`level`)', 'level_sum']],
+      where: simple.Where().rawCondition('`level` = ?', 2),
+      having: simple.Where().condition('level_sum', '>', 2),
+      limit: 1,
+      expected: 'SELECT `user_id`, `email`, sum(`level`) AS `level_sum` FROM `' + table + '` WHERE `level` = ? HAVING `level_sum` > ? LIMIT ?',
+      values: [2,2,1]
+    },
+    {
+      columns: ['user_id', 'email', ['sum(`level`)', 'level_sum']],
+      where: simple.Where().rawCondition('`level` = ?', 2).condition('user_id', 1),
+      group: ['level', 'user_id'],
+      having: simple.Where().condition('level_sum', '>', 2),
+      order: [['user_id', 'ASC']],
+      limit: 1,
+      offset: 2,
+      expected: 'SELECT `user_id`, `email`, sum(`level`) AS `level_sum` FROM `' + table + '` WHERE `level` = ? AND `user_id` = ? GROUP BY `level`, `user_id` HAVING `level_sum` > ? ORDER BY `user_id` ASC LIMIT ?, ?',
+      values: [2,1,2,2,1]
+    }
+  ];
+
+  _.each(queries, function(query) {
+    it('should build a valid SELECT statement for ' + JSON.stringify(query), function () {
+
+      var select = simple.Select(table);
+
+      select.columns(query.columns);
+
+      select.where(query.where);
+
+      if (query.offset) {
+        select.limit(query.limit, query.offset);
+      } else {
+        select.limit(query.limit);
+      }
+
+      if (query.order) {
+        select.order(query.order);
+      }
+
+      if (query.having) {
+        select.having(query.having);
+      }
+
+      if (query.group) {
+        select.group(query.group);
+      }
+
+      select = select.build();
+
+      //console.log(select.query);
+      //console.log(query.expected);
+
+      select.query.should.eql(query.expected);
+      select.values.should.eql(query.values);
+
+    });
+  });
+
+});
+
+
+describe('mysqlSimple.Delete#build()', function () {
+
+  var table = 'user';
+
+  var queries = [
+    {
+      where: simple.Where({user_id: 1, level: 2, email: 'test@test.com'}),
+      limit: 3,
+      expected: 'DELETE FROM `' + table + '` WHERE `user_id` = ? AND `level` = ? AND `email` = ? LIMIT ?',
+      values: [1,2,'test@test.com',3]
+    },
+    {
+      where: {'`user_id` = ?': 1},
+      limit: 4,
+      expected: 'DELETE FROM `' + table + '` WHERE `user_id` = ? LIMIT ?',
+      values: [1,4]
+    }
+  ];
+
+  _.each(queries, function(query) {
+
+    it('should build a valid DELETE statement: ' + JSON.stringify(query), function () {
+
+      var del = simple.Delete(table);
+
+      if (_.isPlainObject(query.where)) {
+        _.each(query.where, function(val, cond) {
+          del.where(cond, val);
+        });
+      } else {
+        del.where(query.where);
+      }
+      del.limit(query.limit);
+
+      del = del.build();
+
+      del.query.should.eql(query.expected);
+      del.values.should.eql(query.values);
+
+    });
 
   });
 
