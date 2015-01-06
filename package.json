@@ -1,6 +1,6 @@
 {
   "name": "sand-mysql-simple",
-  "version": "0.1.5",
+  "version": "0.1.6",
   "description": "A minimalist MySQL Model extension",
   "main": "lib/index.js",
   "scripts": {
@@ -25,7 +25,7 @@
     "common-errors": "^0.4.17",
     "lodash": "^2.4.1",
     "require-all": "^1.0.0",
-    "sand": "0.1.2",
+    "sand": "0.1.3",
     "sand-grain": "0.1.1",
     "sand-mysql": "0.2.10"
   },
