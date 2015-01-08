@@ -26,8 +26,8 @@
     "knex": "^0.7.3",
     "lodash": "^2.4.1",
     "require-all": "^1.0.0",
-    "sand": "0.1.2",
-    "sand-grain": "0.1.1",
+    "sand": "0.1.4",
+    "sand-grain": "0.1.2",
     "sand-mysql": "0.2.10"
   },
   "devDependencies": {
