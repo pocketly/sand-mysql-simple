@@ -95,5 +95,21 @@ describe('mysqlSimple.Model', function () {
 
   });
 
+  it('should remove invalid values from insert', function(done) {
+
+    var insert = models.User().insert({id: 1}).toSQL();
+
+    mock = sinon.mock(sand.mysql);
+    mocks.mysqlQuery(mock, insert.sql, insert.bindings, [null, mocks.exampleInsertResult]);
+
+    models.User.insert({id: 1, name: undefined}, function(err, result) {
+      mock.verify();
+
+      done();
+
+    });
+
+  });
+
 });
 
