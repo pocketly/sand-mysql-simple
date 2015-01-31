@@ -113,6 +113,51 @@ describe('mysqlSimple', function() {
 
     });
 
+    it('should insert or update the values and catch an error', function(done) {
+
+      mock = sinon.mock(models.User);
+      mock.expects('selectRow').yields({});
+      models.User.insertOrUpdate({id: 1, name: 'John'}, {id: 1}, function(err, result, row) {
+        mock.verify();
+
+        done();
+      });
+
+    });
+
+    it('should insert or update the values and INSERT', function(done) {
+
+      mock = sinon.mock(models.User);
+      mock.expects('selectRow').yields(null, null);
+      mock.expects('insert').yields(null, mocks.MySQLInsert);
+      models.User.insertOrUpdate({id: 1, name: 'John'}, {id: 1}, function(err, result, row) {
+        mock.verify();
+        (err === null).should.be.ok;
+        (row === undefined).should.be.ok;
+        result.should.be.eql(mocks.MySQLInsert);
+
+        done();
+      });
+
+    });
+
+    it('should insert or update the values and return the row that should UPDATE', function(done) {
+
+      var props = {id: 1, name: 'John'};
+
+      mock = sinon.mock(models.User);
+      mock.expects('selectRow').yields(null, props);
+      models.User.insertOrUpdate(props, {id: 1}, function(err, result, row) {
+        mock.verify();
+        (err === null).should.be.ok;
+        (result === null).should.be.ok;
+        row.should.be.eql(props);
+
+        done();
+      });
+
+    });
+
   });
 
   describe('mysqlSimple.Util', function() {
